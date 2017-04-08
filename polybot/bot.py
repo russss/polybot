@@ -38,7 +38,7 @@ class Bot(object):
             self.log.warn("Running in test mode - not posting updates. Pass --live to run in live mode.")
 
         for Svc in ALL_SERVICES:
-            if Service.name in self.config:
+            if Svc.name in self.config:
                 svc = Svc(self.config, self.args.live)
                 svc.auth()
                 self.services.append(svc)
