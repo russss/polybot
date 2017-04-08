@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/polybot.svg)](https://badge.fury.io/py/polybot)
+
 Polybot is a framework for making social media bots for multiple
 networks in Python 3.
 
