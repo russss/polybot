@@ -12,6 +12,7 @@ It currently only supports post-only bots as those are the ones I run.
 
 ## Example
 
+
 ```python
 from polybot import Bot
 
@@ -24,7 +25,7 @@ HelloWorldBot('helloworldbot').run()
 
 To configure the accounts the bot uses, just run:
 
-  ./helloworldbot.py --setup
+    ./helloworldbot.py --setup
 
 You'll be guided through authenticating and a config file will be
 automatically created.
