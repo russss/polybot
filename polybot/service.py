@@ -2,6 +2,12 @@ import logging
 from typing import List, Type  # noqa
 from mastodon import Mastodon as MastodonClient
 import tweepy
+from tweepy.error import TweepError
+
+
+class PostError(Exception):
+    """ Raised when there was an error posting """
+    pass
 
 
 class Service(object):
@@ -75,11 +81,14 @@ class Twitter(Service):
         return True
 
     def do_post(self, status, imagefile=None, lat=None, lon=None):
-        if imagefile:
-            self.tweepy.update_with_media(imagefile.name, file=imagefile, status=status,
-                                          lat=lat, long=lon)
-        else:
-            self.tweepy.update_status(status, lat=lat, long=lon)
+        try:
+            if imagefile:
+                self.tweepy.update_with_media(imagefile.name, file=imagefile, status=status,
+                                              lat=lat, long=lon)
+            else:
+                self.tweepy.update_status(status, lat=lat, long=lon)
+        except TweepError as e:
+            raise PostError(e)
 
 
 class Mastodon(Service):
@@ -124,12 +133,16 @@ class Mastodon(Service):
         return True
 
     def do_post(self, status, imagefile=None, lat=None, lon=None):
-        if imagefile:
-            media = [self.mastodon.media_post(imagefile.name)]
-        else:
-            media = None
+        try:
+            if imagefile:
+                media = [self.mastodon.media_post(imagefile.name)]
+            else:
+                media = None
 
-        self.mastodon.status_post(status, media_ids=media)
+            self.mastodon.status_post(status, media_ids=media)
+        except Exception as e:
+            # Mastodon.py exceptions are currently changing so catchall here for the moment
+            raise PostError(e)
 
 
 ALL_SERVICES = [Twitter, Mastodon]  # type: List[Type[Service]]

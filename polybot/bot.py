@@ -3,7 +3,7 @@ import pickle
 import logging
 import argparse
 from typing import List, Type, Dict  # noqa
-from .service import Service, ALL_SERVICES
+from .service import Service, PostError, ALL_SERVICES  # noqa
 
 
 class Bot(object):
@@ -92,7 +92,10 @@ class Bot(object):
     def post(self, status: str, imagefile=None, lat: float=None, lon: float=None) -> None:
         self.log.info("> %s", status)
         for service in self.services:
-            service.post(status, imagefile, lat, lon)
+            try:
+                service.post(status, imagefile, lat, lon)
+            except PostError:
+                self.log.exception("Error posting to %s", service)
 
     def read_config(self) -> None:
         self.config = configparser.ConfigParser()
