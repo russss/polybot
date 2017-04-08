@@ -111,7 +111,7 @@ class Mastodon(Service):
         if result[0] == 'n':
             print("OK, we'll create an app first")
             app_name = input("App name: ")
-            client_id, client_secret = Mastodon.create_app(app_name, api_base_url=base_url)
+            client_id, client_secret = MastodonClient.create_app(app_name, api_base_url=base_url)
             print("App successfully created.")
         else:
             client_id = input("Client ID: ")
