@@ -83,7 +83,7 @@ class Twitter(Service):
     def do_post(self, status, imagefile=None, lat=None, lon=None):
         try:
             if imagefile:
-                self.tweepy.update_with_media(imagefile.name, file=imagefile, status=status,
+                self.tweepy.update_with_media(imagefile.name, status=status,
                                               lat=lat, long=lon)
             else:
                 self.tweepy.update_status(status, lat=lat, long=lon)
