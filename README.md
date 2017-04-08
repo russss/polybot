@@ -10,7 +10,7 @@ It currently only supports post-only bots as those are the ones I run.
 * Automatic state persistence - just put your state in the `self.state`
   dict and it'll get saved/restored across runs.
 
-## Example
+## Example
 
 
 ```python
