@@ -20,14 +20,19 @@ class Bot(object):
                                  help='Actually post updates. Without this flag, runs in dev mode.')
         self.parser.add_argument('--setup', action='store_true',
                                  help='Configure accounts')
+        self.parser.add_argument('--profile',
+                                 help='Choose profile')
         self.name = name
         self.services = []  # type: List[Service]
         self.state = {}  # type: Dict
 
     def run(self) -> None:
         self.args = self.parser.parse_args()
-        self.config_path = '%s.conf' % self.name
-        self.state_path = '%s.state' % self.name
+        profile = ''
+        if len(self.args.profile):
+          profile = '-%s' % self.args.profile
+        self.config_path = '%s%s.conf' % (self.name, profile)
+        self.state_path = '%s%s.state' % (self.name, profile)
         self.read_config()
 
         if self.args.setup:

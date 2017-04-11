@@ -32,5 +32,7 @@ To configure the accounts the bot uses, just run:
 You'll be guided through authenticating and a config file will be
 automatically created.
 
+Use the `--profile [name]` to save and use a specific state/config.
+
 By default, the bot will run in development mode, which avoids actually
 posting to networks. To run in live mode, pass the `--live` flag.
