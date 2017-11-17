@@ -3,7 +3,7 @@
 Polybot is a framework for making social media bots for multiple
 networks in Python 3.
 
-It currently only supports post-only bots as those are the ones I run.
+It currently only supports post-only bots.
 
 ## Features
 
@@ -13,7 +13,6 @@ It currently only supports post-only bots as those are the ones I run.
   dict and it'll get saved/restored across runs.
 
 ## Example
-
 
 ```python
 from polybot import Bot
@@ -36,3 +35,8 @@ Use the `--profile [name]` to save and use a specific state/config.
 
 By default, the bot will run in development mode, which avoids actually
 posting to networks. To run in live mode, pass the `--live` flag.
+
+## Bots which use polybot
+
+* [@dscovr_epic](https://twitter.com/dscovr_epic) / [@dscovr_epic@botsin.space](https://botsin.space/@dscovr_epic)
+* [@dsn_status](https://twitter.com/dsn_status) / [@dsn_status@botsin.space](https://botsin.space/@dsn_status)
