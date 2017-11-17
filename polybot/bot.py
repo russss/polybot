@@ -30,7 +30,7 @@ class Bot(object):
         self.args = self.parser.parse_args()
         profile = ''
         if len(self.args.profile):
-          profile = '-%s' % self.args.profile
+            profile = '-%s' % self.args.profile
         self.config_path = '%s%s.conf' % (self.name, profile)
         self.state_path = '%s%s.state' % (self.name, profile)
         self.read_config()
