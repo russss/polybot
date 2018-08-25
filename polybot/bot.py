@@ -94,11 +94,11 @@ class Bot(object):
             with open(self.state_path, "wb") as f:
                 pickle.dump(self.state, f, pickle.HIGHEST_PROTOCOL)
 
-    def post(self, status: str, imagefile=None, lat: float=None, lon: float=None) -> None:
+    def post(self, status: str, imagefile=None, lat: float=None, lon: float=None, mime_type=None) -> None:
         self.log.info("> %s", status)
         for service in self.services:
             try:
-                service.post(status, imagefile, lat, lon)
+                service.post(status, imagefile, mime_type, lat, lon)
             except PostError:
                 self.log.exception("Error posting to %s", service)
 

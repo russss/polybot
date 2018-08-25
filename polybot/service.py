@@ -1,4 +1,6 @@
+from io import BytesIO
 import logging
+import mimetypes
 from typing import List, Type  # noqa
 from mastodon import Mastodon as MastodonClient
 import tweepy
@@ -26,15 +28,18 @@ class Service(object):
 
     def post(self, status: str,
              imagefile=None,
+             mime_type=None,
              lat: float=None,
              lon: float=None) -> None:
         if self.live:
-            self.do_post(status, imagefile, lat, lon)
+            self.do_post(status, imagefile, mime_type, lat, lon)
 
     def do_post(self,
                 status: str,
                 imagefile=None,
-                lat: float =None, lon: float =None) -> None:
+                mime_type=None,
+                lat: float =None,
+                lon: float =None) -> None:
         raise NotImplementedError()
 
 
@@ -80,11 +85,17 @@ class Twitter(Service):
 
         return True
 
-    def do_post(self, status, imagefile=None, lat=None, lon=None):
+    def do_post(self, status, imagefile=None, mime_type=None, lat=None, lon=None):
         try:
             if imagefile:
-                self.tweepy.update_with_media(imagefile.name, status=status,
-                                              lat=lat, long=lon)
+                if mime_type:
+                    ext = mimetypes.guess_extension(mime_type)
+                    f = BytesIO(imagefile)
+                    imagefile = 'dummy' + ext
+                else:
+                    f = None
+                self.tweepy.update_with_media(imagefile, status=status,
+                                              lat=lat, long=lon, file=f)
             else:
                 self.tweepy.update_status(status, lat=lat, long=lon)
         except TweepError as e:
@@ -132,10 +143,10 @@ class Mastodon(Service):
 
         return True
 
-    def do_post(self, status, imagefile=None, lat=None, lon=None):
+    def do_post(self, status, imagefile=None, mime_type=None, lat=None, lon=None):
         try:
             if imagefile:
-                media = [self.mastodon.media_post(imagefile.name)]
+                media = [self.mastodon.media_post(imagefile, mime_type=mime_type)]
             else:
                 media = None
 
