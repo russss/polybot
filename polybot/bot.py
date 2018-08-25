@@ -95,15 +95,17 @@ class Bot(object):
                 pickle.dump(self.state, f, pickle.HIGHEST_PROTOCOL)
 
     def post(self, status: str, imagefile=None, lat: float=None, lon: float=None,
-             in_reply_to_id=None) -> None:
+             in_reply_to_id=None) -> dict:
         self.log.info("> %s", status)
+        out = {}
         for service in self.services:
             try:
                 if in_reply_to_id:
                     in_reply_to_id = in_reply_to_id[service.name]
-                service.post(status, imagefile, lat, lon, in_reply_to_id)
+                out[service.name] = service.post(status, imagefile, lat, lon, in_reply_to_id)
             except PostError:
                 self.log.exception("Error posting to %s", service)
+        return out
 
     def read_config(self) -> None:
         self.config = configparser.ConfigParser()
