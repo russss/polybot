@@ -20,7 +20,7 @@ class Bot(object):
                                  help='Actually post updates. Without this flag, runs in dev mode.')
         self.parser.add_argument('--setup', action='store_true',
                                  help='Configure accounts')
-        self.parser.add_argument('--profile',
+        self.parser.add_argument('--profile', default='',
                                  help='Choose profile')
         self.name = name
         self.services = []  # type: List[Service]
