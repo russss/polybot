@@ -2,7 +2,7 @@ import configparser
 import pickle
 import logging
 import argparse
-from typing import List, Type, Dict  # noqa
+from typing import List, Type, Dict, Union  # noqa
 from .service import Service, PostError, ALL_SERVICES  # noqa
 
 
@@ -94,7 +94,10 @@ class Bot(object):
             with open(self.state_path, "wb") as f:
                 pickle.dump(self.state, f, pickle.HIGHEST_PROTOCOL)
 
-    def post(self, status: str, imagefile=None, lat: float=None, lon: float=None) -> None:
+    def post(self, status: Union[str, List[str]], imagefile=None, lat: float=None, lon: float=None) -> None:
+        if isinstance(status, list):
+            if not len(status):
+                raise ValueError('Cannot supply an empty list')
         self.log.info("> %s", status)
         for service in self.services:
             try:

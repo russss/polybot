@@ -1,5 +1,5 @@
 import logging
-from typing import List, Type  # noqa
+from typing import List, Type, Union  # noqa
 from mastodon import Mastodon as MastodonClient
 import tweepy
 from tweepy.error import TweepError
@@ -12,6 +12,8 @@ class PostError(Exception):
 
 class Service(object):
     name = None  # type: str
+    max_length = None  # type: int
+    max_length_image = None  # type: int
 
     def __init__(self, config, live: bool) -> None:
         self.log = logging.getLogger(__name__)
@@ -24,11 +26,21 @@ class Service(object):
     def setup(self) -> bool:
         raise NotImplementedError()
 
-    def post(self, status: str,
+    def longest_allowed(self, status: list, imagefile) -> str:
+        max_len = self.max_length_image if imagefile else self.max_length
+        picked = status[0]
+        for s in sorted(status, key=len):
+            if len(s) < max_len:
+                picked = s
+        return picked
+
+    def post(self, status: Union[str, List[str]],
              imagefile=None,
              lat: float=None,
              lon: float=None) -> None:
         if self.live:
+            if isinstance(status, list):
+                status = self.longest_allowed(status, imagefile)
             self.do_post(status, imagefile, lat, lon)
 
     def do_post(self,
@@ -40,6 +52,8 @@ class Service(object):
 
 class Twitter(Service):
     name = 'twitter'
+    max_length = 280
+    max_length_image = 280 - 25
 
     def auth(self):
         auth = tweepy.OAuthHandler(self.config.get('twitter', 'api_key'),
@@ -93,6 +107,8 @@ class Twitter(Service):
 
 class Mastodon(Service):
     name = 'mastodon'
+    max_length = 500
+    max_length_image = 500
 
     def auth(self):
         base_url = self.config.get('mastodon', 'base_url')
