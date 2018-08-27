@@ -1,4 +1,5 @@
 import logging
+import textwrap
 from typing import List, Type  # noqa
 from mastodon import Mastodon as MastodonClient
 import tweepy
@@ -12,6 +13,7 @@ class PostError(Exception):
 
 class Service(object):
     name = None  # type: str
+    ellipsis_length = 1
 
     def __init__(self, config, live: bool) -> None:
         self.log = logging.getLogger(__name__)
@@ -25,12 +27,16 @@ class Service(object):
         raise NotImplementedError()
 
     def post(self, status: str,
+             wrap=False,
              imagefile=None,
              lat: float=None,
              lon: float=None,
              in_reply_to_id=None):
         if self.live:
-            return self.do_post(status, imagefile, lat, lon, in_reply_to_id)
+            if wrap:
+                return self.do_wrapped(status, imagefile, lat, lon, in_reply_to_id)
+            else:
+                return self.do_post(status, imagefile, lat, lon, in_reply_to_id)
 
     def do_post(self,
                 status: str,
@@ -40,9 +46,33 @@ class Service(object):
                 in_reply_to_id=None) -> None:
         raise NotImplementedError()
 
+    def do_wrapped(self, status, imagefile=None, lat=None, lon=None, in_reply_to_id=None):
+        max_len = self.max_length_image if imagefile else self.max_length
+        if len(status) > max_len:
+            wrapped = textwrap.wrap(status, max_len - self.ellipsis_length)
+        else:
+            wrapped = [status]
+        first = True
+        for line in wrapped:
+            if first and len(wrapped) > 1:
+                line = u"%s\u2026" % line
+            if not first:
+                line = u"\u2026%s" % line
+
+            if imagefile and first:
+                out = self.do_post(line, imagefile, lat, lon, in_reply_to_id)
+            else:
+                out = self.do_post(line, lat=lat, lon=lon, in_reply_to_id=in_reply_to_id)
+
+            in_reply_to_id = out.id
+            first = False
+
 
 class Twitter(Service):
     name = 'twitter'
+    max_length = 280
+    max_length_image = 280 - 25
+    ellipsis_length = 2
 
     def auth(self):
         auth = tweepy.OAuthHandler(self.config.get('twitter', 'api_key'),
@@ -97,6 +127,8 @@ class Twitter(Service):
 
 class Mastodon(Service):
     name = 'mastodon'
+    max_length = 500
+    max_length_image = 500
 
     def auth(self):
         base_url = self.config.get('mastodon', 'base_url')
