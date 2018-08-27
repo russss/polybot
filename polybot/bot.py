@@ -7,6 +7,8 @@ from .service import Service, PostError, ALL_SERVICES  # noqa
 
 
 class Bot(object):
+    path = ''
+
     def __init__(self, name: str) -> None:
         logging.basicConfig(level=logging.INFO)
 
@@ -31,8 +33,8 @@ class Bot(object):
         profile = ''
         if len(self.args.profile):
             profile = '-%s' % self.args.profile
-        self.config_path = '%s%s.conf' % (self.name, profile)
-        self.state_path = '%s%s.state' % (self.name, profile)
+        self.config_path = '%s%s%s.conf' % (self.path, self.name, profile)
+        self.state_path = '%s%s%s.state' % (self.path, self.name, profile)
         self.read_config()
 
         if self.args.setup:
