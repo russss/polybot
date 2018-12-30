@@ -2,7 +2,8 @@ language: python
 python:
   - 3.5
   - 3.6
-install: pip install flake8 mypy
+install: pip install -r ./dev-requirements.txt
 script:
-  - flake8
+  - black --check ./polybot
+  - flake8 ./polybot
   - mypy ./polybot --ignore-missing-imports
