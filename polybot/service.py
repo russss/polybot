@@ -1,5 +1,7 @@
+from io import BytesIO
 import logging
 import textwrap
+import mimetypes
 from typing import List, Type  # noqa
 from mastodon import Mastodon as MastodonClient
 import tweepy
@@ -29,6 +31,7 @@ class Service(object):
     def post(self, status: str,
              wrap=False,
              imagefile=None,
+             mime_type=None,
              lat: float=None,
              lon: float=None,
              in_reply_to_id=None):
@@ -43,6 +46,7 @@ class Service(object):
                 imagefile=None,
                 lat: float =None,
                 lon: float =None,
+                mime_type=None,
                 in_reply_to_id=None) -> None:
         raise NotImplementedError()
 
@@ -113,14 +117,20 @@ class Twitter(Service):
 
         return True
 
-    def do_post(self, status, imagefile=None, lat=None, lon=None, in_reply_to_id=None):
+    def do_post(self, status, imagefile=None, lat=None, lon=None, mime_type=None, in_reply_to_id=None):
         try:
             if imagefile:
-                return self.tweepy.update_with_media(imagefile.name, status=status, lat=lat, long=lon,
-                                                     in_reply_to_status_id=in_reply_to_id)
+                if mime_type:
+                    ext = mimetypes.guess_extension(mime_type)
+                    f = BytesIO(imagefile)
+                    imagefile = 'dummy' + ext
+                else:
+                    f = None
+                self.tweepy.update_with_media(imagefile, status=status,
+                                              lat=lat, long=lon, file=f, in_reply_to_status_id=in_reply_to_id)
             else:
                 return self.tweepy.update_status(status, in_reply_to_status_id=in_reply_to_id,
-                                                 lat=lat, long=lon)
+                                                 lat=lat, long=lon, in_reply_to_status_id=in_reply_to_id)
         except TweepError as e:
             raise PostError(e)
 
@@ -168,10 +178,10 @@ class Mastodon(Service):
 
         return True
 
-    def do_post(self, status, imagefile=None, lat=None, lon=None, in_reply_to_id=None):
+    def do_post(self, status, imagefile=None, lat=None, lon=None, mime_type=None, in_reply_to_id=None):
         try:
             if imagefile:
-                media = [self.mastodon.media_post(imagefile.name)]
+                media = [self.mastodon.media_post(imagefile, mime_type=mime_type)]
             else:
                 media = None
 
