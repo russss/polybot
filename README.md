@@ -41,3 +41,5 @@ posting to networks. To run in live mode, pass the `--live` flag.
 
 * [@dscovr_epic](https://twitter.com/dscovr_epic) / [@dscovr_epic@botsin.space](https://botsin.space/@dscovr_epic)
 * [@dsn_status](https://twitter.com/dsn_status) / [@dsn_status@botsin.space](https://botsin.space/@dsn_status)
+* [@insight_images@botsin.space](https://botsin.space/@insight_images) (Not on Twitter)
+* [Matthew's bots](https://github.com/dracos/scheduler)
