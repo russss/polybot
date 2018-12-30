@@ -96,7 +96,7 @@ class Bot(object):
             with open(self.state_path, "wb") as f:
                 pickle.dump(self.state, f, pickle.HIGHEST_PROTOCOL)
 
-    def post(self, status: str, imagefile=None, lat: float=None, lon: float=None,
+    def post(self, status: str, wrap=False, imagefile=None, lat: float=None, lon: float=None,
              in_reply_to_id=None) -> dict:
         self.log.info("> %s", status)
         out = {}
@@ -104,7 +104,7 @@ class Bot(object):
             try:
                 if in_reply_to_id:
                     in_reply_to_id = in_reply_to_id[service.name]
-                out[service.name] = service.post(status, imagefile, lat, lon, in_reply_to_id)
+                out[service.name] = service.post(status, wrap, imagefile, lat, lon, in_reply_to_id)
             except PostError:
                 self.log.exception("Error posting to %s", service)
         return out
