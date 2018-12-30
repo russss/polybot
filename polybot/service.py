@@ -27,14 +27,17 @@ class Service(object):
     def post(self, status: str,
              imagefile=None,
              lat: float=None,
-             lon: float=None) -> None:
+             lon: float=None,
+             in_reply_to_id=None):
         if self.live:
-            self.do_post(status, imagefile, lat, lon)
+            return self.do_post(status, imagefile, lat, lon, in_reply_to_id)
 
     def do_post(self,
                 status: str,
                 imagefile=None,
-                lat: float =None, lon: float =None) -> None:
+                lat: float =None,
+                lon: float =None,
+                in_reply_to_id=None) -> None:
         raise NotImplementedError()
 
 
@@ -80,13 +83,14 @@ class Twitter(Service):
 
         return True
 
-    def do_post(self, status, imagefile=None, lat=None, lon=None):
+    def do_post(self, status, imagefile=None, lat=None, lon=None, in_reply_to_id=None):
         try:
             if imagefile:
-                self.tweepy.update_with_media(imagefile.name, status=status,
-                                              lat=lat, long=lon)
+                return self.tweepy.update_with_media(imagefile.name, status=status, lat=lat, long=lon,
+                                                     in_reply_to_status_id=in_reply_to_id)
             else:
-                self.tweepy.update_status(status, lat=lat, long=lon)
+                return self.tweepy.update_status(status, in_reply_to_status_id=in_reply_to_id,
+                                                 lat=lat, long=lon)
         except TweepError as e:
             raise PostError(e)
 
@@ -132,14 +136,14 @@ class Mastodon(Service):
 
         return True
 
-    def do_post(self, status, imagefile=None, lat=None, lon=None):
+    def do_post(self, status, imagefile=None, lat=None, lon=None, in_reply_to_id=None):
         try:
             if imagefile:
                 media = [self.mastodon.media_post(imagefile.name)]
             else:
                 media = None
 
-            self.mastodon.status_post(status, media_ids=media)
+            return self.mastodon.status_post(status, in_reply_to_id=in_reply_to_id, media_ids=media)
         except Exception as e:
             # Mastodon.py exceptions are currently changing so catchall here for the moment
             raise PostError(e)
