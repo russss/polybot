@@ -2,7 +2,7 @@ from io import BytesIO
 import logging
 import textwrap
 import mimetypes
-from typing import List, Type  # noqa
+from typing import List, Type, Union  # noqa
 from mastodon import Mastodon as MastodonClient
 import tweepy
 from tweepy.error import TweepError
@@ -16,6 +16,8 @@ class PostError(Exception):
 class Service(object):
     name = None  # type: str
     ellipsis_length = 1
+    max_length = None  # type: int
+    max_length_image = None  # type: int
 
     def __init__(self, config, live: bool) -> None:
         self.log = logging.getLogger(__name__)
@@ -28,7 +30,15 @@ class Service(object):
     def setup(self) -> bool:
         raise NotImplementedError()
 
-    def post(self, status: str,
+    def longest_allowed(self, status: list, imagefile) -> str:
+        max_len = self.max_length_image if imagefile else self.max_length
+        picked = status[0]
+        for s in sorted(status, key=len):
+            if len(s) < max_len:
+                picked = s
+        return picked
+
+    def post(self, status: Union[str, List[str]],
              wrap=False,
              imagefile=None,
              mime_type=None,
@@ -36,10 +46,13 @@ class Service(object):
              lon: float=None,
              in_reply_to_id=None):
         if self.live:
+            if isinstance(status, list):
+                status = self.longest_allowed(status, imagefile)
             if wrap:
                 return self.do_wrapped(status, imagefile, lat, lon, in_reply_to_id)
             else:
                 return self.do_post(status, imagefile, lat, lon, in_reply_to_id)
+            self.do_post(status, imagefile, lat, lon)
 
     def do_post(self,
                 status: str,
@@ -130,7 +143,7 @@ class Twitter(Service):
                                               lat=lat, long=lon, file=f, in_reply_to_status_id=in_reply_to_id)
             else:
                 return self.tweepy.update_status(status, in_reply_to_status_id=in_reply_to_id,
-                                                 lat=lat, long=lon, in_reply_to_status_id=in_reply_to_id)
+                                                 lat=lat, long=lon)
         except TweepError as e:
             raise PostError(e)
 
