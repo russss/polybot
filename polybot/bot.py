@@ -2,7 +2,7 @@ import configparser
 import pickle
 import logging
 import argparse
-from typing import List, Type, Dict  # noqa
+from typing import List, Type, Dict, Union  # noqa
 from .service import Service, PostError, ALL_SERVICES  # noqa
 
 
@@ -96,23 +96,17 @@ class Bot(object):
             with open(self.state_path, "wb") as f:
                 pickle.dump(self.state, f, pickle.HIGHEST_PROTOCOL)
 
-<<<<<<< HEAD
-    def post(self, status: str, wrap=False, imagefile=None, lat: float=None, lon: float=None,
-             in_reply_to_id=None) -> dict:
-=======
-    def post(self, status: str, imagefile=None, lat: float=None, lon: float=None, mime_type=None) -> None:
->>>>>>> d1ff3d36772439535679c8bf43d0e33ab60795ca
+    def post(self, status: Union[str, List[str]], wrap=False, imagefile=None, in_reply_to_id=None, lat: float=None, lon: float=None) -> dict:
+        if isinstance(status, list):
+            if not len(status):
+                raise ValueError('Cannot supply an empty list')
         self.log.info("> %s", status)
         out = {}
         for service in self.services:
             try:
-<<<<<<< HEAD
                 if in_reply_to_id:
                     in_reply_to_id = in_reply_to_id[service.name]
                 out[service.name] = service.post(status, wrap, imagefile, lat, lon, in_reply_to_id)
-=======
-                service.post(status, imagefile, mime_type, lat, lon)
->>>>>>> d1ff3d36772439535679c8bf43d0e33ab60795ca
             except PostError:
                 self.log.exception("Error posting to %s", service)
         return out
