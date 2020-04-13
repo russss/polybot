@@ -171,7 +171,7 @@ class Twitter(Service):
                     imagefile = "dummy" + ext
                 else:
                     f = None
-                self.tweepy.update_with_media(
+                return self.tweepy.update_with_media(
                     imagefile,
                     status=status,
                     lat=lat,
