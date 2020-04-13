@@ -50,13 +50,11 @@ class Service(object):
         in_reply_to_id=None,
     ):
         if self.live:
-            if isinstance(status, list):
-                status = self.longest_allowed(status, imagefile)
             if wrap:
                 return self.do_wrapped(status, imagefile, mime_type, lat, lon, in_reply_to_id)
-            else:
-                return self.do_post(status, imagefile, mime_type, lat, lon, in_reply_to_id)
-            self.do_post(status, imagefile, lat, lon)
+            if isinstance(status, list):
+                status = self.longest_allowed(status, imagefile)
+            return self.do_post(status, imagefile, mime_type, lat, lon, in_reply_to_id)
 
     def do_post(
         self,

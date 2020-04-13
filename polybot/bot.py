@@ -115,6 +115,8 @@ class Bot(object):
         lon: float = None,
     ) -> dict:
         if isinstance(status, list):
+            if wrap:
+                raise ValueError('Cannot mix wrap and status list')
             if not len(status):
                 raise ValueError("Cannot supply an empty list")
         self.log.info("> %s", status)
