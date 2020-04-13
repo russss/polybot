@@ -109,6 +109,7 @@ class Bot(object):
         status: Union[str, List[str]],
         wrap=False,
         imagefile=None,
+        mime_type=None,
         in_reply_to_id=None,
         lat: float = None,
         lon: float = None,
@@ -123,7 +124,7 @@ class Bot(object):
                 if in_reply_to_id:
                     in_reply_to_id = in_reply_to_id[service.name]
                 out[service.name] = service.post(
-                    status, wrap, imagefile, lat, lon, in_reply_to_id
+                    status, wrap, imagefile, mime_type, lat, lon, in_reply_to_id
                 )
             except PostError:
                 self.log.exception("Error posting to %s", service)
