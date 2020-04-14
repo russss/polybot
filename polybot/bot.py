@@ -109,11 +109,14 @@ class Bot(object):
         status: Union[str, List[str]],
         wrap=False,
         imagefile=None,
+        mime_type=None,
         in_reply_to_id=None,
         lat: float = None,
         lon: float = None,
     ) -> dict:
         if isinstance(status, list):
+            if wrap:
+                raise ValueError('Cannot mix wrap and status list')
             if not len(status):
                 raise ValueError("Cannot supply an empty list")
         self.log.info("> %s", status)
@@ -123,7 +126,7 @@ class Bot(object):
                 if in_reply_to_id:
                     in_reply_to_id = in_reply_to_id[service.name]
                 out[service.name] = service.post(
-                    status, wrap, imagefile, lat, lon, in_reply_to_id
+                    status, wrap, imagefile, mime_type, lat, lon, in_reply_to_id
                 )
             except PostError:
                 self.log.exception("Error posting to %s", service)

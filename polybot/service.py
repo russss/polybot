@@ -50,27 +50,31 @@ class Service(object):
         in_reply_to_id=None,
     ):
         if self.live:
+            if wrap:
+                return self.do_wrapped(status, imagefile, mime_type, lat, lon, in_reply_to_id)
             if isinstance(status, list):
                 status = self.longest_allowed(status, imagefile)
-            if wrap:
-                return self.do_wrapped(status, imagefile, lat, lon, in_reply_to_id)
-            else:
-                return self.do_post(status, imagefile, lat, lon, in_reply_to_id)
-            self.do_post(status, imagefile, lat, lon)
+            return self.do_post(status, imagefile, mime_type, lat, lon, in_reply_to_id)
 
     def do_post(
         self,
         status: str,
         imagefile=None,
+        mime_type=None,
         lat: float = None,
         lon: float = None,
-        mime_type=None,
         in_reply_to_id=None,
     ) -> None:
         raise NotImplementedError()
 
     def do_wrapped(
-        self, status, imagefile=None, lat=None, lon=None, in_reply_to_id=None
+        self,
+        status,
+        imagefile=None,
+        mime_type=None,
+        lat=None,
+        lon=None,
+        in_reply_to_id=None
     ):
         max_len = self.max_length_image if imagefile else self.max_length
         if len(status) > max_len:
@@ -85,7 +89,7 @@ class Service(object):
                 line = u"\u2026%s" % line
 
             if imagefile and first:
-                out = self.do_post(line, imagefile, lat, lon, in_reply_to_id)
+                out = self.do_post(line, imagefile, mime_type, lat, lon, in_reply_to_id)
             else:
                 out = self.do_post(
                     line, lat=lat, lon=lon, in_reply_to_id=in_reply_to_id
@@ -154,9 +158,9 @@ class Twitter(Service):
         self,
         status,
         imagefile=None,
+        mime_type=None,
         lat=None,
         lon=None,
-        mime_type=None,
         in_reply_to_id=None,
     ):
         try:
@@ -167,7 +171,7 @@ class Twitter(Service):
                     imagefile = "dummy" + ext
                 else:
                     f = None
-                self.tweepy.update_with_media(
+                return self.tweepy.update_with_media(
                     imagefile,
                     status=status,
                     lat=lat,
@@ -238,9 +242,9 @@ class Mastodon(Service):
         self,
         status,
         imagefile=None,
+        mime_type=None,
         lat=None,
         lon=None,
-        mime_type=None,
         in_reply_to_id=None,
     ):
         try:
