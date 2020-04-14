@@ -51,7 +51,9 @@ class Service(object):
     ):
         if self.live:
             if wrap:
-                return self.do_wrapped(status, imagefile, mime_type, lat, lon, in_reply_to_id)
+                return self.do_wrapped(
+                    status, imagefile, mime_type, lat, lon, in_reply_to_id
+                )
             if isinstance(status, list):
                 status = self.longest_allowed(status, imagefile)
             return self.do_post(status, imagefile, mime_type, lat, lon, in_reply_to_id)
@@ -74,7 +76,7 @@ class Service(object):
         mime_type=None,
         lat=None,
         lon=None,
-        in_reply_to_id=None
+        in_reply_to_id=None,
     ):
         max_len = self.max_length_image if imagefile else self.max_length
         if len(status) > max_len:
