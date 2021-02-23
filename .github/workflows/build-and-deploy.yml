@@ -22,7 +22,7 @@ jobs:
         run: |
           echo "${{ secrets.CR_PAT }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
 
-          IMAGE_ID=ghcr.io/$IMAGE_NAME
+          IMAGE_ID=ghcr.io/${{ github.repository }}
 
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=${{ github.sha }}
