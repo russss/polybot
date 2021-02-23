@@ -7,10 +7,23 @@ env:
   IMAGE_NAME: polybot
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - run: |
+          pip install -r ./dev-requirements.txt
+          black --check ./polybot
+          flake8 ./polybot
+          mypy ./polybot --ignore-missing-imports
+
   build:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
-
+    needs: test
     steps:
       - uses: actions/checkout@v2
 
