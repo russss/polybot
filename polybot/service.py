@@ -251,7 +251,12 @@ class Mastodon(Service):
     ):
         try:
             if imagefile:
-                media = [self.mastodon.media_post(imagefile, mime_type=mime_type)]
+                if isinstance(imagefile,list):
+                    media = []
+                    for f in imagefile:
+                        media.append(self.mastodon.media_post(f,mime_type=mime_type))
+                else:
+                    media = [self.mastodon.media_post(imagefile, mime_type=mime_type)]
             else:
                 media = None
 
