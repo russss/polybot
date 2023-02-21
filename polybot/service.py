@@ -9,7 +9,8 @@ import requests
 
 
 class PostError(Exception):
-    """ Raised when there was an error posting """
+    """Raised when there was an error posting"""
+
     pass
 
 
@@ -85,9 +86,9 @@ class Service(object):
         first = True
         for line in wrapped:
             if first and len(wrapped) > 1:
-                line = u"%s\u2026" % line
+                line = "%s\u2026" % line
             if not first:
-                line = u"\u2026%s" % line
+                line = "\u2026%s" % line
 
             if imagefile and first:
                 out = self.do_post(line, imagefile, mime_type, lat, lon, in_reply_to_id)
@@ -199,7 +200,9 @@ class Mastodon(Service):
             client_id=self.config.get("mastodon", "client_id"),
             client_secret=self.config.get("mastodon", "client_secret"),
             access_token=self.config.get("mastodon", "access_token"),
-            version_check_mode=self.config.get("mastodon", "version_check_mode", fallback="none"),
+            version_check_mode=self.config.get(
+                "mastodon", "version_check_mode", fallback="none"
+            ),
             api_base_url=base_url,
         )
         self.log.info("Connected to Mastodon %s", base_url)
@@ -217,11 +220,11 @@ class Mastodon(Service):
 
         if not nodeinfo_url:
             return None
-        
+
         res = requests.get(nodeinfo_url)
         if res.status_code != 200:
             return None
-        
+
         data = res.json()
         return data.get("software", None)
 
@@ -240,7 +243,9 @@ class Mastodon(Service):
 
         actually_mastodon = False
         if not software:
-            print("Unable to determine server software using the nodeinfo endpoint. Make sure you got your URL right.")
+            print(
+                "Unable to determine server software using the nodeinfo endpoint. Make sure you got your URL right."
+            )
             print("Assuming this isn't running stock Mastodon and continuing...")
         else:
             name = software.get("name")
@@ -262,8 +267,10 @@ class Mastodon(Service):
 
         print("Now we'll need to log in...")
         mastodon = MastodonClient(
-            client_id=client_id, client_secret=client_secret, api_base_url=base_url,
-            version_check_mode="created" if actually_mastodon else "none"
+            client_id=client_id,
+            client_secret=client_secret,
+            api_base_url=base_url,
+            version_check_mode="created" if actually_mastodon else "none",
         )
 
         req_url = mastodon.auth_request_url()
@@ -280,7 +287,9 @@ class Mastodon(Service):
         self.config.set("mastodon", "client_id", client_id)
         self.config.set("mastodon", "client_secret", client_secret)
         self.config.set("mastodon", "access_token", mastodon.access_token)
-        self.config.set("mastodon", "version_check_mode", "created" if actually_mastodon else "none")
+        self.config.set(
+            "mastodon", "version_check_mode", "created" if actually_mastodon else "none"
+        )
 
         return True
 
@@ -295,10 +304,10 @@ class Mastodon(Service):
     ):
         try:
             if imagefile:
-                if isinstance(imagefile,list):
+                if isinstance(imagefile, list):
                     media = []
                     for f in imagefile:
-                        media.append(self.mastodon.media_post(f,mime_type=mime_type))
+                        media.append(self.mastodon.media_post(f, mime_type=mime_type))
                 else:
                     media = [self.mastodon.media_post(imagefile, mime_type=mime_type)]
             else:
