@@ -244,7 +244,8 @@ class Mastodon(Service):
         actually_mastodon = False
         if not software:
             print(
-                "Unable to determine server software using the nodeinfo endpoint. Make sure you got your URL right."
+                "Unable to determine server software using the nodeinfo endpoint. "
+                "Make sure you got your URL right."
             )
             print("Assuming this isn't running stock Mastodon and continuing...")
         else:
