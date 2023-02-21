@@ -41,7 +41,10 @@ class Bot(object):
         self.read_config()
 
         if self.args.setup:
-            self.setup()
+            try:
+                self.setup()
+            except KeyboardInterrupt:
+                pass
             return
 
         if not self.args.live:
