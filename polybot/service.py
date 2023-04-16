@@ -108,51 +108,48 @@ class Twitter(Service):
     ellipsis_length = 2
 
     def auth(self):
-        auth = tweepy.OAuthHandler(
-            self.config.get("twitter", "api_key"),
-            self.config.get("twitter", "api_secret"),
+        self.tweepy = tweepy.Client(
+            consumer_key=self.config.get("twitter", "api_key"),
+            consumer_secret=self.config.get("twitter", "api_secret"),
+            access_token=self.config.get("twitter", "access_key"),
+            access_token_secret=self.config.get("twitter", "access_secret"),
         )
-        auth.set_access_token(
-            self.config.get("twitter", "access_key"),
-            self.config.get("twitter", "access_secret"),
+        # API v1 is required to upload images.
+        self.tweepy_v1 = tweepy.API(
+            tweepy.OAuth1UserHandler(
+                consumer_key=self.config.get("twitter", "api_key"),
+                consumer_secret=self.config.get("twitter", "api_secret"),
+                access_token=self.config.get("twitter", "access_key"),
+                access_token_secret=self.config.get("twitter", "access_secret"),
+            )
         )
-        self.tweepy = tweepy.API(auth)
-        me = self.tweepy.me()
-        self.log.info("Connected to Twitter as %s", me.screen_name)
+        res = self.tweepy.get_me()
+        self.log.info("Connected to Twitter as %s", res.data["username"])
 
     def setup(self):
         print(
             "You'll need a consumer token and secret from your twitter app configuration here."
         )
-        api_key = input("Consumer token: ")
+        api_key = input("Consumer key: ")
         api_secret = input("Consumer secret: ")
-        auth = tweepy.OAuthHandler(api_key, api_secret)
-        try:
-            redirect_url = auth.get_authorization_url()
-        except Exception:
-            print("Unable to fetch a request token! Check your consumer credentials")
-            return False
-        print(
-            "OK, now visit this URL and get the verifier from there: %s" % redirect_url
-        )
-        verifier = input("Verifier: ")
-        try:
-            auth.get_access_token(verifier)
-        except Exception:
-            print(
-                "Unable to fetch the access token! Verifier may not have been correct."
-            )
-            return False
+        access_token = input("Access token: ")
+        access_token_secret = input("Access token secret: ")
 
         print("Checking everything works...")
-        self.tweepy = tweepy.API(auth)
-        print("Successfully authenticated as %s" % self.tweepy.me().screen_name)
+        self.tweepy = tweepy.Client(
+            consumer_key=api_key,
+            consumer_secret=api_secret,
+            access_token=access_token,
+            access_token_secret=access_token_secret,
+        )
+        res = self.tweepy.get_me()
+        print("Authenticated as", res.data["username"])
 
         self.config.add_section("twitter")
         self.config.set("twitter", "api_key", api_key)
         self.config.set("twitter", "api_secret", api_secret)
-        self.config.set("twitter", "access_key", auth.access_token)
-        self.config.set("twitter", "access_secret", auth.access_token_secret)
+        self.config.set("twitter", "access_key", access_token)
+        self.config.set("twitter", "access_secret", access_token_secret)
 
         return True
 
@@ -166,6 +163,7 @@ class Twitter(Service):
         in_reply_to_id=None,
     ):
         try:
+            media_ids = []
             if imagefile:
                 if mime_type:
                     ext = mimetypes.guess_extension(mime_type)
@@ -173,18 +171,13 @@ class Twitter(Service):
                     imagefile = "dummy" + ext
                 else:
                     f = None
-                return self.tweepy.update_with_media(
-                    imagefile,
-                    status=status,
-                    lat=lat,
-                    long=lon,
-                    file=f,
-                    in_reply_to_status_id=in_reply_to_id,
-                )
-            else:
-                return self.tweepy.update_status(
-                    status, in_reply_to_status_id=in_reply_to_id, lat=lat, long=lon
-                )
+                media = self.tweepy_v1.media_upload(imagefile, file=f)
+                media_ids.append(media.media_id)
+            return self.tweepy.create_tweet(
+                text=status,
+                in_reply_to_tweet_id=in_reply_to_id,
+                media_ids=media_ids,
+            )
         except Exception as e:
             raise PostError(e)
 
