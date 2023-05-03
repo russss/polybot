@@ -97,7 +97,10 @@ class Service(object):
                     line, lat=lat, lon=lon, in_reply_to_id=in_reply_to_id
                 )
 
-            in_reply_to_id = out.id
+            if hasattr(out, "id"):
+                in_reply_to_id = out.id
+            else:
+                in_reply_to_id = out.data["id"]
             first = False
 
 
