@@ -173,6 +173,8 @@ class Twitter(Service):
                     f = None
                 media = self.tweepy_v1.media_upload(imagefile, file=f)
                 media_ids.append(media.media_id)
+            else:
+                media_ids = None
             return self.tweepy.create_tweet(
                 text=status,
                 in_reply_to_tweet_id=in_reply_to_id,
