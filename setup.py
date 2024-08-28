@@ -23,5 +23,5 @@ setup(
         "Programming Language :: Python :: 3",
     ],
     packages=["polybot"],
-    install_requires=["tweepy==4.12.1", "Mastodon.py==1.8.0"],
+    install_requires=["tweepy==4.12.1", "Mastodon.py==1.8.0", "atproto==0.0.49"],
 )

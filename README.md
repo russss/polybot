@@ -7,7 +7,7 @@ It currently only supports post-only bots.
 
 ## Features
 
-* Automatically post to both Twitter and Mastodon.
+* Automatically post to Twitter, Mastodon, Bluesky.
 * A friendly setup interface to handle the OAuth hassle for you.
 * Automatic state persistence - just put your state in the `self.state`
   dict and it'll get saved/restored across runs.
