@@ -3,6 +3,7 @@ import logging
 import textwrap
 import mimetypes
 from typing import List, Type, Union  # noqa
+from atproto import Client, models
 from mastodon import Mastodon as MastodonClient
 import tweepy
 import requests
@@ -97,7 +98,12 @@ class Service(object):
                     line, lat=lat, lon=lon, in_reply_to_id=in_reply_to_id
                 )
 
-            if hasattr(out, "id"):
+            if isinstance(out, models.com.atproto.repo.strong_ref.Main):
+                if first:
+                    in_reply_to_id = {"root": out, "parent": out}
+                else:
+                    in_reply_to_id["parent"] = out
+            elif hasattr(out, "id"):
                 in_reply_to_id = out.id
             else:
                 in_reply_to_id = out.data["id"]
@@ -320,4 +326,55 @@ class Mastodon(Service):
             raise PostError(e)
 
 
-ALL_SERVICES = [Twitter, Mastodon]  # type: List[Type[Service]]
+class Bluesky(Service):
+    name = "bluesky"
+    max_length = 300
+    max_length_image = 300
+
+    def auth(self):
+        self.bluesky = Client()
+        self.bluesky.login(
+            self.config.get("bluesky", "email"), self.config.get("bluesky", "password")
+        )
+        self.log.info("Connected to Bluesky")
+
+    def setup(self):
+        print("We need your Bluesky email and password")
+        email = input("Email: ")
+        password = input("Password: ")
+        self.config.add_section("bluesky")
+        self.config.set("bluesky", "email", email)
+        self.config.set("bluesky", "password", password)
+        return True
+
+    def do_post(
+        self,
+        status,
+        imagefile=None,
+        mime_type=None,
+        lat=None,
+        lon=None,
+        in_reply_to_id=None,
+    ):
+        if in_reply_to_id:
+            in_reply_to_id = models.AppBskyFeedPost.ReplyRef(
+                parent=in_reply_to_id["parent"], root=in_reply_to_id["root"]
+            )
+        try:
+            if imagefile:
+                if not isinstance(imagefile, list):
+                    imagefile = [imagefile]
+                resp = self.bluesky.send_images(
+                    status, imagefile, None, self.bluesky.me.did, in_reply_to_id
+                )
+            else:
+                resp = self.bluesky.send_post(
+                    status, self.bluesky.me.did, in_reply_to_id
+                )
+            return models.create_strong_ref(resp)
+
+        except Exception as e:
+            raise PostError(e)
+
+
+ALL_SERVICES = [Twitter, Mastodon, Bluesky]  # type: List[Type[Service]]
