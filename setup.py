@@ -4,13 +4,9 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-version = {}
-with open(path.join(here, "polybot", "__init__.py")) as fp:
-    exec(fp.read(), version)
-
 setup(
     name="polybot",
-    version=version["__version__"],
+    version="1.3",
     description="Multi bot library",
     long_description="",
     license="MIT",
