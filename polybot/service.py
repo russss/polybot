@@ -5,7 +5,6 @@ import mimetypes
 from typing import List, Union, Optional, Type
 from atproto import Client, models  # type: ignore
 from mastodon import Mastodon as MastodonClient  # type: ignore
-import tweepy  # type: ignore
 import requests
 
 from .image import Image
@@ -117,6 +116,8 @@ class Twitter(Service):
     max_image_size = int(5e6)
 
     def auth(self):
+        import tweepy  # type: ignore
+
         self.tweepy = tweepy.Client(
             consumer_key=self.config.get("twitter", "api_key"),
             consumer_secret=self.config.get("twitter", "api_secret"),
@@ -136,6 +137,8 @@ class Twitter(Service):
         self.log.info("Connected to Twitter as %s", res.data["username"])
 
     def setup(self):
+        import tweepy  # type: ignore
+
         print(
             "You'll need a consumer token and secret from your twitter app configuration here."
         )
