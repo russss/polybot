@@ -2,21 +2,18 @@ import configparser
 import pickle
 import logging
 import argparse
-from typing import List, Type, Dict, Union  # noqa
-from .service import Service, PostError, ALL_SERVICES  # noqa
+from typing import List, Union, Optional, Any
+from .service import Service, PostError, ALL_SERVICES
 
 
 class Bot(object):
     path = ""
 
     def __init__(self, name: str) -> None:
-        logging.basicConfig(level=logging.INFO)
-
-        # Set log levels for common chatty packages
-        logging.getLogger("requests").setLevel(logging.WARN)
-        logging.getLogger("tweepy").setLevel(logging.WARN)
-
-        self.log = logging.getLogger(__name__)
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(module)s [%(levelname)s] %(message)s",
+        )
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument(
             "--live",
@@ -27,12 +24,28 @@ class Bot(object):
             "--setup", action="store_true", help="Configure accounts"
         )
         self.parser.add_argument("--profile", default="", help="Choose profile")
+        self.parser.add_argument(
+            "--loglevel",
+            default="INFO",
+            help="Set logging level",
+            choices=["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"],
+        )
+
+        # Set log levels for common chatty packages
+        for package in ["requests", "tweepy", "httpx"]:
+            logging.getLogger(package).setLevel(logging.WARN)
+
+        self.log = logging.getLogger(__name__)
+
         self.name = name
-        self.services = []  # type: List[Service]
-        self.state = {}  # type: Dict
+        self.services: List[Service] = []
+        self.state: Any = {}
 
     def run(self) -> None:
         self.args = self.parser.parse_args()
+        logging.getLogger("root").setLevel(self.args.loglevel)
+        self.log.info("Polybot starting...")
+
         profile = ""
         if len(self.args.profile):
             profile = "-%s" % self.args.profile
@@ -48,7 +61,7 @@ class Bot(object):
             return
 
         if not self.args.live:
-            self.log.warn(
+            self.log.warning(
                 "Running in test mode - not posting updates. Pass --live to run in live mode."
             )
 
@@ -59,12 +72,16 @@ class Bot(object):
                 self.services.append(svc)
 
         if len(self.services) == 0:
-            self.log.warning("Not posting to any services!")
+            self.log.warning("No services to post to. Use --setup to configure some!")
+            if self.args.live:
+                return
 
         self.load_state()
         self.log.info("Running")
         try:
             self.main()
+        except KeyboardInterrupt:
+            pass
         finally:
             self.save_state()
             self.log.info("Shut down")
@@ -114,8 +131,8 @@ class Bot(object):
         imagefile=None,
         mime_type=None,
         in_reply_to_id=None,
-        lat: float = None,
-        lon: float = None,
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
     ) -> dict:
         if isinstance(status, list):
             if wrap:
