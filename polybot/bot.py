@@ -2,6 +2,8 @@ import configparser
 import pickle
 import logging
 import argparse
+import signal
+import sys
 from typing import List, Union, Optional, Any
 from .service import Service, PostError, ALL_SERVICES
 from .image import Image
@@ -77,15 +79,22 @@ class Bot(object):
             if self.args.live:
                 return
 
+        signal.signal(signal.SIGTERM, self.signal)
+        signal.signal(signal.SIGINT, self.signal)
+        signal.signal(signal.SIGHUP, lambda _signum, _frame: self.save_state())
+
         self.load_state()
         self.log.info("Running")
         try:
             self.main()
-        except KeyboardInterrupt:
-            pass
         finally:
             self.save_state()
             self.log.info("Shut down")
+
+    def signal(self, signum, _frame) -> None:
+        self.save_state()
+        self.log.info("Shut down on signal %s", signum)
+        sys.exit(0)
 
     def setup(self) -> None:
         print("Polybot setup")
