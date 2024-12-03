@@ -1,0 +1,29 @@
+[project]
+name = "polybot"
+version = "1.4.0"
+description = "Multi bot library"
+authors = [{ name = "Russ Garrett", email = "russ@garrett.co.uk" }]
+readme = "README.md"
+# atproto doesn't currently work on 3.13
+requires-python = "<3.13,>=3.9"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "atproto>=0.0.55",
+    "mastodon-py>=1.8.1",
+    "requests>=2.32.3",
+    "tweepy>=4.14.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/russss/polybot"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13.0",
+    "ruff>=0.8.1",
+    "types-requests>=2.32.0.20241016",
+]

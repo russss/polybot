@@ -2,10 +2,10 @@ from io import BytesIO
 import logging
 import textwrap
 import mimetypes
-from typing import List, Type, Union  # noqa
-from atproto import Client, models
-from mastodon import Mastodon as MastodonClient
-import tweepy
+from typing import List, Union, Optional, BinaryIO, Type
+from atproto import Client, models  # type: ignore
+from mastodon import Mastodon as MastodonClient  # type: ignore
+import tweepy  # type: ignore
 import requests
 
 
@@ -46,8 +46,8 @@ class Service(object):
         wrap=False,
         imagefile=None,
         mime_type=None,
-        lat: float = None,
-        lon: float = None,
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
         in_reply_to_id=None,
     ):
         if self.live:
@@ -62,10 +62,10 @@ class Service(object):
     def do_post(
         self,
         status: str,
-        imagefile=None,
+        imagefile: Optional[BinaryIO] = None,
         mime_type=None,
-        lat: float = None,
-        lon: float = None,
+        lat: Optional[float] = None,
+        lon: Optional[float] = None,
         in_reply_to_id=None,
     ) -> None:
         raise NotImplementedError()
@@ -301,7 +301,7 @@ class Mastodon(Service):
     def do_post(
         self,
         status,
-        imagefile=None,
+        imagefile: Optional[BinaryIO] = None,
         mime_type=None,
         lat=None,
         lon=None,
@@ -350,7 +350,7 @@ class Bluesky(Service):
     def do_post(
         self,
         status,
-        imagefile=None,
+        imagefile: Optional[BinaryIO] = None,
         mime_type=None,
         lat=None,
         lon=None,
@@ -363,9 +363,11 @@ class Bluesky(Service):
         try:
             if imagefile:
                 if not isinstance(imagefile, list):
-                    imagefile = [imagefile]
+                    imagefile_list = [imagefile]
+                else:
+                    imagefile_list = imagefile
                 resp = self.bluesky.send_images(
-                    status, imagefile, None, self.bluesky.me.did, in_reply_to_id
+                    status, imagefile_list, None, self.bluesky.me.did, in_reply_to_id
                 )
             else:
                 resp = self.bluesky.send_post(
@@ -377,4 +379,4 @@ class Bluesky(Service):
             raise PostError(e)
 
 
-ALL_SERVICES = [Twitter, Mastodon, Bluesky]  # type: List[Type[Service]]
+ALL_SERVICES: List[Type[Service]] = [Twitter, Mastodon, Bluesky]
