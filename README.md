@@ -59,7 +59,7 @@ self.post("Hello World",
 
 Images are automatically resized to below the maximum allowable size on each platform.
 
-### Handling post length limitations
+### Handling post length limitations
 
 Services have differing post length limits, so a list of messages can be passed to the `post` method,
 and Polybot will choose the longest message which is supported by each configured service.
