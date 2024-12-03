@@ -4,6 +4,7 @@ import logging
 import argparse
 from typing import List, Union, Optional, Any
 from .service import Service, PostError, ALL_SERVICES
+from .image import Image
 
 
 class Bot(object):
@@ -12,7 +13,7 @@ class Bot(object):
     def __init__(self, name: str) -> None:
         logging.basicConfig(
             level=logging.INFO,
-            format="%(asctime)s %(module)s [%(levelname)s] %(message)s",
+            format="%(asctime)s [%(levelname)s] %(module)s: %(message)s",
         )
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument(
@@ -127,26 +128,48 @@ class Bot(object):
     def post(
         self,
         status: Union[str, List[str]],
-        wrap=False,
-        imagefile=None,
-        mime_type=None,
+        wrap: bool = False,
+        images: List[Image] = [],
         in_reply_to_id=None,
         lat: Optional[float] = None,
         lon: Optional[float] = None,
     ) -> dict:
+        """Publish a post to all configured services.
+
+        If a service fails to post, the error is logged and the post is still sent to the
+        remaining services.
+
+        Arguments:
+            status: The status text to post (required). It can be a list of strings, in which
+                        case the longest string allowed by each service will be used.
+            wrap: Whether to wrap the text into multiple posts.
+            images: A list of Image objects to attach to the post.
+            in_reply_to_id: A dictionary of service names to status IDs to reply to.
+            lat: Latitude to attach to the post. (Twitter only)
+            lon: Longitude to attach to the post. (Twitter only)
+        """
         if isinstance(status, list):
             if wrap:
                 raise ValueError("Cannot mix wrap and status list")
             if not len(status):
                 raise ValueError("Cannot supply an empty list")
+
+        if not isinstance(images, List) or not all(
+            isinstance(i, Image) for i in images
+        ):
+            raise ValueError("The images argument must be a list of Image objects")
+
         self.log.info("> %s", status)
+        if images:
+            self.log.info("Images: %s", images)
+
         out = {}
         for service in self.services:
             try:
                 if in_reply_to_id:
                     in_reply_to_id = in_reply_to_id[service.name]
                 out[service.name] = service.post(
-                    status, wrap, imagefile, mime_type, lat, lon, in_reply_to_id
+                    status, wrap, images, lat, lon, in_reply_to_id
                 )
             except PostError:
                 self.log.exception("Error posting to %s", service)

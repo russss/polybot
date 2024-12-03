@@ -2,11 +2,13 @@ from io import BytesIO
 import logging
 import textwrap
 import mimetypes
-from typing import List, Union, Optional, BinaryIO, Type
+from typing import List, Union, Optional, Type
 from atproto import Client, models  # type: ignore
 from mastodon import Mastodon as MastodonClient  # type: ignore
 import tweepy  # type: ignore
 import requests
+
+from .image import Image
 
 
 class PostError(Exception):
@@ -20,6 +22,7 @@ class Service(object):
     ellipsis_length = 1
     max_length = None  # type: int
     max_length_image = None  # type: int
+    max_image_size: int = int(10e6)
 
     def __init__(self, config, live: bool) -> None:
         self.log = logging.getLogger(__name__)
@@ -32,8 +35,8 @@ class Service(object):
     def setup(self) -> bool:
         raise NotImplementedError()
 
-    def longest_allowed(self, status: list, imagefile) -> str:
-        max_len = self.max_length_image if imagefile else self.max_length
+    def longest_allowed(self, status: list, images: List[Image]) -> str:
+        max_len = self.max_length_image if images else self.max_length
         picked = status[0]
         for s in sorted(status, key=len):
             if len(s) < max_len:
@@ -44,42 +47,38 @@ class Service(object):
         self,
         status: Union[str, List[str]],
         wrap=False,
-        imagefile=None,
-        mime_type=None,
+        images: List[Image] = [],
         lat: Optional[float] = None,
         lon: Optional[float] = None,
         in_reply_to_id=None,
     ):
+        images = [i.resize_to_target(self.max_image_size) for i in images]
         if self.live:
             if wrap:
-                return self.do_wrapped(
-                    status, imagefile, mime_type, lat, lon, in_reply_to_id
-                )
+                return self.do_wrapped(status, images, lat, lon, in_reply_to_id)
             if isinstance(status, list):
-                status = self.longest_allowed(status, imagefile)
-            return self.do_post(status, imagefile, mime_type, lat, lon, in_reply_to_id)
+                status = self.longest_allowed(status, images)
+            return self.do_post(status, images, lat, lon, in_reply_to_id)
 
     def do_post(
         self,
         status: str,
-        imagefile: Optional[BinaryIO] = None,
-        mime_type=None,
+        images: List[Image] = [],
         lat: Optional[float] = None,
         lon: Optional[float] = None,
         in_reply_to_id=None,
-    ) -> None:
+    ):
         raise NotImplementedError()
 
     def do_wrapped(
         self,
         status,
-        imagefile=None,
-        mime_type=None,
+        images: List[Image] = [],
         lat=None,
         lon=None,
         in_reply_to_id=None,
     ):
-        max_len = self.max_length_image if imagefile else self.max_length
+        max_len = self.max_length_image if images else self.max_length
         if len(status) > max_len:
             wrapped = textwrap.wrap(status, max_len - self.ellipsis_length)
         else:
@@ -91,8 +90,8 @@ class Service(object):
             if not first:
                 line = "\u2026%s" % line
 
-            if imagefile and first:
-                out = self.do_post(line, imagefile, mime_type, lat, lon, in_reply_to_id)
+            if images and first:
+                out = self.do_post(line, images, lat, lon, in_reply_to_id)
             else:
                 out = self.do_post(
                     line, lat=lat, lon=lon, in_reply_to_id=in_reply_to_id
@@ -115,6 +114,7 @@ class Twitter(Service):
     max_length = 280
     max_length_image = 280 - 25
     ellipsis_length = 2
+    max_image_size = int(5e6)
 
     def auth(self):
         self.tweepy = tweepy.Client(
@@ -165,29 +165,36 @@ class Twitter(Service):
     def do_post(
         self,
         status,
-        imagefile=None,
-        mime_type=None,
+        images: List[Image] = [],
         lat=None,
         lon=None,
         in_reply_to_id=None,
     ):
         try:
             media_ids = []
-            if imagefile:
-                if mime_type:
-                    ext = mimetypes.guess_extension(mime_type)
-                    f = BytesIO(imagefile)
-                    imagefile = "dummy" + ext
-                else:
-                    f = None
-                media = self.tweepy_v1.media_upload(imagefile, file=f)
-                media_ids.append(media.media_id)
-            else:
-                media_ids = None
+            if images:
+                for image in images:
+                    if image.mime_type:
+                        ext = mimetypes.guess_extension(image.mime_type)
+                        if not ext:
+                            self.log.warning(
+                                "MIME type %s not recognized", image.mime_type
+                            )
+                            continue
+                        filename = "dummy" + ext
+                    else:
+                        self.log.warning(
+                            "Not uploading image with no MIME type to Twitter"
+                        )
+                        continue
+                    media = self.tweepy_v1.media_upload(
+                        filename, file=BytesIO(image.data)
+                    )
+                    media_ids.append(media.media_id)
             return self.tweepy.create_tweet(
                 text=status,
                 in_reply_to_tweet_id=in_reply_to_id,
-                media_ids=media_ids,
+                media_ids=media_ids if media_ids else None,
             )
         except Exception as e:
             raise PostError(e)
@@ -197,6 +204,7 @@ class Mastodon(Service):
     name = "mastodon"
     max_length = 500
     max_length_image = 500
+    max_image_size = int(16e6)
 
     def auth(self):
         base_url = self.config.get("mastodon", "base_url")
@@ -237,7 +245,7 @@ class Mastodon(Service):
         print(
             "First, we'll need the base URL of the Mastodon instance you want to connect to,"
         )
-        print("e.g. https://mastodon.social or https://botsin.space")
+        print("e.g. https://mastodon.social")
         base_url = input("Base URL: ")
 
         if not base_url.startswith("http"):
@@ -301,20 +309,21 @@ class Mastodon(Service):
     def do_post(
         self,
         status,
-        imagefile: Optional[BinaryIO] = None,
-        mime_type=None,
+        images: List[Image] = [],
         lat=None,
         lon=None,
         in_reply_to_id=None,
     ):
         try:
-            if imagefile:
-                if isinstance(imagefile, list):
-                    media = []
-                    for f in imagefile:
-                        media.append(self.mastodon.media_post(f, mime_type=mime_type))
-                else:
-                    media = [self.mastodon.media_post(imagefile, mime_type=mime_type)]
+            if images:
+                media = [
+                    self.mastodon.media_post(
+                        image.data,
+                        mime_type=image.mime_type,
+                        description=image.description,
+                    )
+                    for image in images
+                ]
             else:
                 media = None
 
@@ -330,6 +339,8 @@ class Bluesky(Service):
     name = "bluesky"
     max_length = 300
     max_length_image = 300
+    # As of 2024-12-03 the maximum image size allowed on Bluesky is 1 metric megabyte.
+    max_image_size = int(1e6)
 
     def auth(self):
         self.bluesky = Client()
@@ -350,8 +361,7 @@ class Bluesky(Service):
     def do_post(
         self,
         status,
-        imagefile: Optional[BinaryIO] = None,
-        mime_type=None,
+        images: List[Image] = [],
         lat=None,
         lon=None,
         in_reply_to_id=None,
@@ -361,13 +371,13 @@ class Bluesky(Service):
                 parent=in_reply_to_id["parent"], root=in_reply_to_id["root"]
             )
         try:
-            if imagefile:
-                if not isinstance(imagefile, list):
-                    imagefile_list = [imagefile]
-                else:
-                    imagefile_list = imagefile
+            if len(images) > 0:
                 resp = self.bluesky.send_images(
-                    status, imagefile_list, None, self.bluesky.me.did, in_reply_to_id
+                    status,
+                    [i.data for i in images],
+                    [i.description for i in images],
+                    self.bluesky.me.did,
+                    in_reply_to_id,
                 )
             else:
                 resp = self.bluesky.send_post(
