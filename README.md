@@ -20,6 +20,7 @@ be guaranteed but pull requests are welcome.
   bots.
 
 ## Getting started
+Install Polybot [from PyPi](https://pypi.org/project/polybot/) using your package manager of choice.
 
 ```python
 from polybot import Bot
