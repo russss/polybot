@@ -82,7 +82,7 @@ persisted, to avoid repeating posts.
 
 The state dictionary is serialised to a file called `<bot_name>.state` in the local directory.
 This automatically happens when the process is terminated, but you can also trigger this
-by calling `self.save_state()`.
+by calling `self.save_state()`, or by sending the process a `SIGHUP` signal.
 
 ## Bots which use Polybot
 
