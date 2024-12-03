@@ -1,7 +1,7 @@
 [project]
 name = "polybot"
 version = "0.9.0"
-description = "Multi bot library"
+description = "A simple framework for building robust social media bots for multiple networks"
 authors = [{ name = "Russ Garrett", email = "russ@garrett.co.uk" }]
 readme = "README.md"
 # atproto doesn't currently work on 3.13
