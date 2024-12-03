@@ -3,9 +3,6 @@ name: Build and Publish
 on:
   push:
 
-env:
-  IMAGE_NAME: polybot
-
 jobs:
   test:
     runs-on: ubuntu-22.04
@@ -16,8 +13,10 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
-      - name: Install python
-        run: uv python install
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
       - name: Run tests
         run: |
           uv run ruff check
