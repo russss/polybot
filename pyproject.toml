@@ -1,6 +1,6 @@
 [project]
 name = "polybot"
-version = "1.4.0"
+version = "0.9.0"
 description = "Multi bot library"
 authors = [{ name = "Russ Garrett", email = "russ@garrett.co.uk" }]
 readme = "README.md"
