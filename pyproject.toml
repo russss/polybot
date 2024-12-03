@@ -23,4 +23,12 @@ dependencies = [
 Homepage = "https://github.com/russss/polybot"
 
 [dependency-groups]
-dev = ["mypy>=1.13.0", "ruff>=0.8.1", "types-requests>=2.32.0.20241016"]
+dev = [
+    "mypy>=1.13.0",
+    "ruff>=0.8.1",
+    "types-requests>=2.32.0.20241016",
+    "pytest>=8.3.4",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
