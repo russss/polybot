@@ -357,7 +357,7 @@ class Bluesky(Service):
         if self.login_ratelimit_expiry > time():
             self.log.warning(
                 "Not connecting to Bluesky as login rate limit is still active. "
-                "Will re-attempt connection in %s seconds.",
+                "Will re-attempt connection in %d seconds.",
                 self.login_ratelimit_expiry - time(),
             )
             return
@@ -372,7 +372,7 @@ class Bluesky(Service):
                 self.login_ratelimit_expiry = int(e.response.headers["ratelimit-reset"])
                 self.log.warning(
                     "Rate-limited by Bluesky when connecting. "
-                    "Will re-attempt connection in %s seconds.",
+                    "Will re-attempt connection in %d seconds.",
                     self.login_ratelimit_expiry - time(),
                 )
                 return
