@@ -347,7 +347,8 @@ class Bluesky(Service):
     # As of 2024-12-03 the maximum image size allowed on Bluesky is 1 metric megabyte.
     max_image_size = int(1e6)
 
-    def __init__(self):
+    def __init__(self, config, live: bool):
+        super().__init__(config, live)
         self.login_ratelimit_expiry = 0
         self.connected = False
 
