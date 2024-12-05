@@ -2,8 +2,10 @@ from io import BytesIO
 import logging
 import textwrap
 import mimetypes
+from time import time
 from typing import List, Union, Optional, Type
 from atproto import Client, models  # type: ignore
+from atproto_client.exceptions import RequestException  # type: ignore
 from mastodon import Mastodon as MastodonClient  # type: ignore
 import requests
 
@@ -345,11 +347,37 @@ class Bluesky(Service):
     # As of 2024-12-03 the maximum image size allowed on Bluesky is 1 metric megabyte.
     max_image_size = int(1e6)
 
+    def __init__(self):
+        self.login_ratelimit_expiry = 0
+        self.connected = False
+
     def auth(self):
         self.bluesky = Client()
-        self.bluesky.login(
-            self.config.get("bluesky", "email"), self.config.get("bluesky", "password")
-        )
+        if self.login_ratelimit_expiry > time():
+            self.log.warning(
+                "Not connecting to Bluesky as login rate limit is still active. "
+                "Will re-attempt connection in %s seconds.",
+                self.login_ratelimit_expiry - time(),
+            )
+            return
+
+        try:
+            self.bluesky.login(
+                self.config.get("bluesky", "email"),
+                self.config.get("bluesky", "password"),
+            )
+        except RequestException as e:
+            if e.response.status_code == 429:
+                self.login_ratelimit_expiry = int(e.response.headers["ratelimit-reset"])
+                self.log.warning(
+                    "Rate-limited by Bluesky when connecting. "
+                    "Will re-attempt connection in %s seconds.",
+                    self.login_ratelimit_expiry - time(),
+                )
+                return
+            raise
+
+        self.connected = True
         self.log.info("Connected to Bluesky")
 
     def setup(self):
@@ -369,6 +397,13 @@ class Bluesky(Service):
         lon=None,
         in_reply_to_id=None,
     ):
+        if not self.connected:
+            self.auth()
+
+        if not self.connected:
+            self.log.warning("Skipping Bluesky post, not connected")
+            return
+
         if in_reply_to_id:
             in_reply_to_id = models.AppBskyFeedPost.ReplyRef(
                 parent=in_reply_to_id["parent"], root=in_reply_to_id["root"]
