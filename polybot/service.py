@@ -28,6 +28,7 @@ class Service(object):
     max_length_image = None  # type: int
     max_image_size: int = int(10e6)
     max_image_pixels: Optional[int] = None
+    max_image_count: int = 4
 
     def __init__(self, config, live: bool) -> None:
         self.log = logging.getLogger(__name__)
@@ -62,7 +63,7 @@ class Service(object):
     ):
         images = [
             i.resize_to_target(self.max_image_size, self.max_image_pixels)
-            for i in images
+            for i in images[: self.max_image_count]
         ]
         if self.live:
             if wrap:
@@ -311,10 +312,18 @@ class Mastodon(Service):
         except Exception:
             max_length = self.max_length
 
+        try:
+            max_image_count = int(
+                instance_info["configuration"]["statuses"]["max_media_attachments"]
+            )
+        except Exception:
+            max_image_count = self.max_image_count
+
         self.max_image_size = image_size
         self.max_length = max_length
         self.max_length_image = max_length
         self.max_image_pixels = image_pixels
+        self.max_image_count = max_image_count
 
     def setup(self):
         print()

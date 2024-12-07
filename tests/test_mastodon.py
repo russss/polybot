@@ -13,6 +13,7 @@ def test_instance_info():
     assert service.software == "gotosocial"
     assert service.max_length == 5000
     assert service.max_image_size == 5242880
+    assert service.max_image_count == 6
 
     config.set("mastodon", "base_url", "https://mastodon.social")
     service = Mastodon(config, "mastodon")
