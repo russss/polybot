@@ -38,7 +38,7 @@ class Service(object):
         self.config = config
         self.live = live
         self.user_agent = (
-            f"polybot/{POLYBOT_VERSION} (https://github.com/russss/polybot)"
+            f"Polybot/{POLYBOT_VERSION} (https://github.com/russss/polybot)"
         )
 
     def auth(self) -> None:
