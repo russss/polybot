@@ -7,12 +7,15 @@ from typing import List, Union, Optional, Type
 from atproto import Client, models  # type: ignore
 from atproto_client.exceptions import RequestException  # type: ignore
 from mastodon import Mastodon as MastodonClient  # type: ignore
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 import httpx
 
 from .image import Image
 
-POLYBOT_VERSION = version("polybot")
+try:
+    POLYBOT_VERSION = version("polybot")
+except PackageNotFoundError:
+    POLYBOT_VERSION = "dev"
 
 
 class PostError(Exception):
