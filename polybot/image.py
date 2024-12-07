@@ -42,23 +42,32 @@ class Image:
         self.mime_type = mime_type
         self.description = description
 
-    def resize_to_target(self, target_bytes: int) -> "Image":
-        """Resize the image to a target size in bytes. Returns a new Image object.
+    def resize_to_target(
+        self, target_bytes: int, target_pixels: Optional[int] = None
+    ) -> "Image":
+        """Resize the image to a target maximum size in bytes and (optionally) pixels. Returns a new Image object.
         This is required for Bluesky's silly image size limit.
         """
+
         original_bytes = len(self.data)
-        if original_bytes < target_bytes:
+        if target_pixels is None and original_bytes < target_bytes:
             return self
 
         img = PILImage.open(BytesIO(self.data))
-
         margin = 0.9
         new_bytes = original_bytes
+        new_pixels = original_pixels = img.size[0] * img.size[1]
+        output_bytes = self.data
 
-        while new_bytes > target_bytes:
-            current_pixels = img.size[0] * img.size[1]
-            new_pixels = int(current_pixels * (target_bytes * margin / original_bytes))
-            ratio = (new_pixels / current_pixels) ** 0.5
+        if target_pixels is None:
+            target_pixels = original_pixels
+
+        while new_bytes > target_bytes or new_pixels > target_pixels:
+            new_pixels = int(original_pixels * (target_bytes * margin / original_bytes))
+            if target_pixels is not None:
+                new_pixels = min(new_pixels, target_pixels)
+
+            ratio = (new_pixels / original_pixels) ** 0.5
             new_size = (int(img.width * ratio), int(img.height * ratio))
 
             new_img = img.resize(new_size)

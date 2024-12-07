@@ -27,6 +27,7 @@ class Service(object):
     max_length = None  # type: int
     max_length_image = None  # type: int
     max_image_size: int = int(10e6)
+    max_image_pixels: Optional[int] = None
 
     def __init__(self, config, live: bool) -> None:
         self.log = logging.getLogger(__name__)
@@ -59,7 +60,10 @@ class Service(object):
         lon: Optional[float] = None,
         in_reply_to_id=None,
     ):
-        images = [i.resize_to_target(self.max_image_size) for i in images]
+        images = [
+            i.resize_to_target(self.max_image_size, self.max_image_pixels)
+            for i in images
+        ]
         if self.live:
             if wrap:
                 return self.do_wrapped(status, images, lat, lon, in_reply_to_id)
@@ -238,9 +242,10 @@ class Mastodon(Service):
         )
         self.log.info("Connected to %s at %s", self.software, base_url)
         self.log.info(
-            "Max post length: %d chars, max image size: %d MB",
+            "Max post length: %d chars, max image size: %d MB, max image pixels: %d",
             self.max_length,
             self.max_image_size / 1024 / 1024,
+            self.max_image_pixels,
         )
 
     def fetch_endpoint(self, path):
@@ -252,7 +257,7 @@ class Mastodon(Service):
             return None
         return res.json()
 
-    def update_instance_info(self):
+    def get_node_software(self):
         data = self.fetch_endpoint("/.well-known/nodeinfo")
         if not data:
             return None
@@ -270,7 +275,14 @@ class Mastodon(Service):
             return None
 
         data = res.json()
-        self.software = data.get("software", {}).get("name")
+        return data.get("software", {}).get("name")
+
+    def update_instance_info(self):
+        """Fetch and save details about the instance we're connecting to, including software type
+        and post size limits.
+        """
+
+        self.software = self.get_node_software()
 
         instance_info = self.fetch_endpoint("/api/v1/instance")
         if not instance_info:
@@ -284,6 +296,15 @@ class Mastodon(Service):
             image_size = self.max_image_size
 
         try:
+            image_pixels = int(
+                instance_info["configuration"]["media_attachments"][
+                    "image_matrix_limit"
+                ]
+            )
+        except Exception:
+            image_pixels = self.max_image_pixels
+
+        try:
             max_length = int(
                 instance_info["configuration"]["statuses"]["max_characters"]
             )
@@ -293,6 +314,7 @@ class Mastodon(Service):
         self.max_image_size = image_size
         self.max_length = max_length
         self.max_length_image = max_length
+        self.max_image_pixels = image_pixels
 
     def setup(self):
         print()
