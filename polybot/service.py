@@ -7,9 +7,12 @@ from typing import List, Union, Optional, Type
 from atproto import Client, models  # type: ignore
 from atproto_client.exceptions import RequestException  # type: ignore
 from mastodon import Mastodon as MastodonClient  # type: ignore
+from importlib.metadata import version
 import httpx
 
 from .image import Image
+
+POLYBOT_VERSION = version("polybot")
 
 
 class PostError(Exception):
@@ -29,6 +32,9 @@ class Service(object):
         self.log = logging.getLogger(__name__)
         self.config = config
         self.live = live
+        self.user_agent = (
+            f"polybot/{POLYBOT_VERSION} (https://github.com/russss/polybot)"
+        )
 
     def auth(self) -> None:
         raise NotImplementedError()
@@ -212,6 +218,10 @@ class Mastodon(Service):
     max_length_image = 500
     max_image_size = int(16e6)
 
+    def __init__(self, config, live: bool):
+        super().__init__(config, live)
+        self.http = httpx.Client(headers={"User-Agent": self.user_agent})
+
     def auth(self):
         self.update_instance_info()
 
@@ -224,6 +234,7 @@ class Mastodon(Service):
                 "mastodon", "version_check_mode", fallback="none"
             ),
             api_base_url=base_url,
+            user_agent=self.user_agent,
         )
         self.log.info("Connected to %s at %s", self.software, base_url)
         self.log.info(
@@ -236,7 +247,7 @@ class Mastodon(Service):
         base_url = self.config.get("mastodon", "base_url")
         if base_url is None:
             return None
-        res = httpx.get(base_url + path)
+        res = self.http.get(base_url + path)
         if res.status_code != 200:
             return None
         return res.json()
@@ -254,7 +265,7 @@ class Mastodon(Service):
         if not nodeinfo_url:
             return None
 
-        res = httpx.get(nodeinfo_url)
+        res = self.http.get(nodeinfo_url)
         if res.status_code != 200:
             return None
 
@@ -328,6 +339,7 @@ class Mastodon(Service):
             client_secret=client_secret,
             api_base_url=base_url,
             version_check_mode="created" if actually_mastodon else "none",
+            user_agent=self.user_agent,
         )
 
         req_url = mastodon.auth_request_url()
