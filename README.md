@@ -10,6 +10,7 @@ Polybot is a simple framework for building robust social media bots for multiple
 * A friendly command-line setup interface to handle the authentication hassle for you.
 * Automatic state persistence - just put your state in the `self.state`
   dict and it'll get saved/restored across runs.
+* Graceful handling of different post length limits and image upload sizes between services.
 
 X/Twitter support is no longer regularly tested as the authors no longer use it. Reliability can't
 be guaranteed but pull requests are welcome.
