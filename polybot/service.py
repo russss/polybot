@@ -7,7 +7,7 @@ from typing import List, Union, Optional, Type
 from atproto import Client, models  # type: ignore
 from atproto_client.exceptions import RequestException  # type: ignore
 from mastodon import Mastodon as MastodonClient  # type: ignore
-import requests
+import httpx
 
 from .image import Image
 
@@ -236,7 +236,7 @@ class Mastodon(Service):
         base_url = self.config.get("mastodon", "base_url")
         if base_url is None:
             return None
-        res = requests.get(base_url + path)
+        res = httpx.get(base_url + path)
         if res.status_code != 200:
             return None
         return res.json()
@@ -254,7 +254,7 @@ class Mastodon(Service):
         if not nodeinfo_url:
             return None
 
-        res = requests.get(nodeinfo_url)
+        res = httpx.get(nodeinfo_url)
         if res.status_code != 200:
             return None
 
