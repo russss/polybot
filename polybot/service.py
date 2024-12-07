@@ -207,11 +207,14 @@ class Twitter(Service):
 
 class Mastodon(Service):
     name = "mastodon"
+    software = None
     max_length = 500
     max_length_image = 500
     max_image_size = int(16e6)
 
     def auth(self):
+        self.update_instance_info()
+
         base_url = self.config.get("mastodon", "base_url")
         self.mastodon = MastodonClient(
             client_id=self.config.get("mastodon", "client_id"),
@@ -222,13 +225,26 @@ class Mastodon(Service):
             ),
             api_base_url=base_url,
         )
-        self.log.info("Connected to Mastodon %s", base_url)
+        self.log.info("Connected to %s at %s", self.software, base_url)
+        self.log.info(
+            "Max post length: %d chars, max image size: %d MB",
+            self.max_length,
+            self.max_image_size / 1024 / 1024,
+        )
 
-    def get_server_software(self, hostname):
-        res = requests.get(hostname + "/.well-known/nodeinfo")
+    def fetch_endpoint(self, path):
+        base_url = self.config.get("mastodon", "base_url")
+        if base_url is None:
+            return None
+        res = requests.get(base_url + path)
         if res.status_code != 200:
             return None
-        data = res.json()
+        return res.json()
+
+    def update_instance_info(self):
+        data = self.fetch_endpoint("/.well-known/nodeinfo")
+        if not data:
+            return None
 
         nodeinfo_url = None
         for link in data.get("links", []):
@@ -243,7 +259,29 @@ class Mastodon(Service):
             return None
 
         data = res.json()
-        return data.get("software", None)
+        self.software = data.get("software", {}).get("name")
+
+        instance_info = self.fetch_endpoint("/api/v1/instance")
+        if not instance_info:
+            return
+
+        try:
+            image_size = int(
+                instance_info["configuration"]["media_attachments"]["image_size_limit"]
+            )
+        except Exception:
+            image_size = self.max_image_size
+
+        try:
+            max_length = int(
+                instance_info["configuration"]["statuses"]["max_characters"]
+            )
+        except Exception:
+            max_length = self.max_length
+
+        self.max_image_size = image_size
+        self.max_length = max_length
+        self.max_length_image = max_length
 
     def setup(self):
         print()
@@ -256,20 +294,21 @@ class Mastodon(Service):
         if not base_url.startswith("http"):
             base_url = "https://" + base_url
 
-        software = self.get_server_software(base_url)
+        self.config.add_section("mastodon")
+        self.config.set("mastodon", "base_url", base_url)
+        self.update_instance_info()
 
         actually_mastodon = False
-        if not software:
+        if not self.software:
             print(
                 "Unable to determine server software using the nodeinfo endpoint. "
                 "Make sure you got your URL right."
             )
             print("Assuming this isn't running stock Mastodon and continuing...")
         else:
-            name = software.get("name")
-            if name and name.lower() == "mastodon":
+            if self.software.lower() == "mastodon":
                 actually_mastodon = True
-            print(f"Detected server software: {name}")
+            print(f"Detected server software: {self.software}")
 
         result = input("Do you already have an app registered on this server (y/N)? ")
         if result[0].lower() == "y":
@@ -300,8 +339,6 @@ class Mastodon(Service):
         mastodon.log_in(code=code)
         print("Successfully authenticated.")
 
-        self.config.add_section("mastodon")
-        self.config.set("mastodon", "base_url", base_url)
         self.config.set("mastodon", "client_id", client_id)
         self.config.set("mastodon", "client_secret", client_secret)
         self.config.set("mastodon", "access_token", mastodon.access_token)
