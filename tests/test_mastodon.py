@@ -1,4 +1,5 @@
 import configparser
+
 from polybot.service import Mastodon
 
 

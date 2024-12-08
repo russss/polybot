@@ -1,14 +1,15 @@
-from io import BytesIO
 import logging
-import textwrap
 import mimetypes
+import textwrap
+from importlib.metadata import PackageNotFoundError, version
+from io import BytesIO
 from time import time
-from typing import List, Union, Optional, Type
+from typing import Optional, Union
+
+import httpx
 from atproto import Client, models  # type: ignore
 from atproto_client.exceptions import RequestException  # type: ignore
 from mastodon import Mastodon as MastodonClient  # type: ignore
-from importlib.metadata import PackageNotFoundError, version
-import httpx
 
 from .image import Image
 
@@ -24,7 +25,7 @@ class PostError(Exception):
     pass
 
 
-class Service(object):
+class Service:
     name = None  # type: str
     ellipsis_length = 1
     max_length = None  # type: int
@@ -47,7 +48,7 @@ class Service(object):
     def setup(self) -> bool:
         raise NotImplementedError()
 
-    def longest_allowed(self, status: list, images: List[Image]) -> str:
+    def longest_allowed(self, status: list, images: list[Image]) -> str:
         max_len = self.max_length_image if images else self.max_length
         picked = status[0]
         for s in sorted(status, key=len):
@@ -57,9 +58,9 @@ class Service(object):
 
     def post(
         self,
-        status: Union[str, List[str]],
+        status: Union[str, list[str]],
         wrap=False,
-        images: List[Image] = [],
+        images: list[Image] = [],
         lat: Optional[float] = None,
         lon: Optional[float] = None,
         in_reply_to_id=None,
@@ -78,7 +79,7 @@ class Service(object):
     def do_post(
         self,
         status: str,
-        images: List[Image] = [],
+        images: list[Image] = [],
         lat: Optional[float] = None,
         lon: Optional[float] = None,
         in_reply_to_id=None,
@@ -88,7 +89,7 @@ class Service(object):
     def do_wrapped(
         self,
         status,
-        images: List[Image] = [],
+        images: list[Image] = [],
         lat=None,
         lon=None,
         in_reply_to_id=None,
@@ -101,9 +102,9 @@ class Service(object):
         first = True
         for line in wrapped:
             if first and len(wrapped) > 1:
-                line = "%s\u2026" % line
+                line = line + "\u2026"
             if not first:
-                line = "\u2026%s" % line
+                line = "\u2026" + line
 
             if images and first:
                 out = self.do_post(line, images, lat, lon, in_reply_to_id)
@@ -184,7 +185,7 @@ class Twitter(Service):
     def do_post(
         self,
         status,
-        images: List[Image] = [],
+        images: list[Image] = [],
         lat=None,
         lon=None,
         in_reply_to_id=None,
@@ -397,7 +398,7 @@ class Mastodon(Service):
     def do_post(
         self,
         status,
-        images: List[Image] = [],
+        images: list[Image] = [],
         lat=None,
         lon=None,
         in_reply_to_id=None,
@@ -476,7 +477,7 @@ class Bluesky(Service):
     def do_post(
         self,
         status,
-        images: List[Image] = [],
+        images: list[Image] = [],
         lat=None,
         lon=None,
         in_reply_to_id=None,
@@ -511,4 +512,4 @@ class Bluesky(Service):
             raise PostError(e)
 
 
-ALL_SERVICES: List[Type[Service]] = [Twitter, Mastodon, Bluesky]
+ALL_SERVICES: list[type[Service]] = [Twitter, Mastodon, Bluesky]

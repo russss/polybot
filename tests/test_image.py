@@ -1,7 +1,9 @@
-from polybot.image import Image
 from io import BytesIO
-from PIL import Image as PILImage
 from pathlib import Path
+
+from PIL import Image as PILImage
+
+from polybot.image import Image
 
 
 def count_pixels(image):

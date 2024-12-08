@@ -1,8 +1,9 @@
-from typing import BinaryIO, Optional
+import logging
 from io import BytesIO
 from pathlib import Path
+from typing import BinaryIO, Optional
+
 from PIL import Image as PILImage
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -45,8 +46,8 @@ class Image:
     def resize_to_target(
         self, target_bytes: int, target_pixels: Optional[int] = None
     ) -> "Image":
-        """Resize the image to a target maximum size in bytes and (optionally) pixels. Returns a new Image object.
-        This is required for Bluesky's silly image size limit.
+        """Resize the image to a target maximum size in bytes and (optionally) pixels.
+        Returns a new Image object.
         """
 
         original_bytes = len(self.data)
@@ -63,9 +64,10 @@ class Image:
             target_pixels = original_pixels
 
         while new_bytes > target_bytes or new_pixels > target_pixels:
-            new_pixels = int(original_pixels * (target_bytes * margin / original_bytes))
-            if target_pixels is not None:
-                new_pixels = min(new_pixels, target_pixels)
+            new_pixels = min(
+                int(original_pixels * (target_bytes * margin / original_bytes)),
+                target_pixels,
+            )
 
             ratio = (new_pixels / original_pixels) ** 0.5
             new_size = (int(img.width * ratio), int(img.height * ratio))

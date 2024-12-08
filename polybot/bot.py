@@ -1,15 +1,16 @@
-import configparser
-import pickle
-import logging
 import argparse
+import configparser
+import logging
+import pickle
 import signal
 import sys
-from typing import List, Union, Optional, Any
-from .service import Service, PostError, ALL_SERVICES
+from typing import Any, Optional, Union
+
 from .image import Image
+from .service import ALL_SERVICES, PostError, Service
 
 
-class Bot(object):
+class Bot:
     path = ""
 
     def __init__(self, name: str) -> None:
@@ -41,7 +42,7 @@ class Bot(object):
         self.log = logging.getLogger(__name__)
 
         self.name = name
-        self.services: List[Service] = []
+        self.services: list[Service] = []
         self.state: Any = {}
 
     def run(self) -> None:
@@ -51,9 +52,10 @@ class Bot(object):
 
         profile = ""
         if len(self.args.profile):
-            profile = "-%s" % self.args.profile
-        self.config_path = "%s%s%s.conf" % (self.path, self.name, profile)
-        self.state_path = "%s%s%s.state" % (self.path, self.name, profile)
+            profile = "-" + self.args.profile
+        prefix = f"{self.path}{self.name}{profile}"
+        self.config_path = prefix + ".conf"
+        self.state_path = prefix + ".state"
         self.read_config()
 
         if self.args.setup:
@@ -101,21 +103,20 @@ class Bot(object):
         print("=" * 80)
         for Svc in ALL_SERVICES:
             if Svc.name not in self.config:
-                result = input("Configure %s (y/n)? " % Svc.name)
+                result = input(f"Configure {Svc.name} (y/n)? ")
                 if result[0] == "y":
                     if Svc(self.config, False).setup():
-                        print("Configuring %s succeeded, writing config" % Svc.name)
+                        print(f"Configuring {Svc.name} succeeded, writing config")
                         self.write_config()
                     else:
-                        print("Configuring %s failed." % Svc.name)
+                        print(f"Configuring {Svc.name} failed.")
                 else:
                     print("OK, skipping.")
             else:
-                print("Service %s is already configured" % Svc.name)
+                print(f"Service {Svc.name} is already configured")
             print("-" * 80)
         print(
-            "Setup complete. To reconfigure, remove the service details from %s"
-            % self.config_path
+            f"Setup complete. To reconfigure, remove the service details from {self.config_path}"
         )
 
     def main(self) -> None:
@@ -125,10 +126,11 @@ class Bot(object):
         try:
             with open(self.state_path, "rb") as f:
                 self.state = pickle.load(f)
-        except IOError:
+        except OSError:
             self.log.info("No state file found")
 
     def save_state(self) -> None:
+        """Save the bot's state to disk."""
         if len(self.state) != 0:
             self.log.info("Saving state...")
             with open(self.state_path, "wb") as f:
@@ -136,9 +138,9 @@ class Bot(object):
 
     def post(
         self,
-        status: Union[str, List[str]],
+        status: Union[str, list[str]],
         wrap: bool = False,
-        images: List[Image] = [],
+        images: list[Image] = [],
         in_reply_to_id=None,
         lat: Optional[float] = None,
         lon: Optional[float] = None,
@@ -163,7 +165,7 @@ class Bot(object):
             if not len(status):
                 raise ValueError("Cannot supply an empty list")
 
-        if not isinstance(images, List) or not all(
+        if not isinstance(images, list) or not all(
             isinstance(i, Image) for i in images
         ):
             raise ValueError("The images argument must be a list of Image objects")
