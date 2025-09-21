@@ -98,3 +98,9 @@ class Image:
 
     def __repr__(self):
         return f'Image({self.mime_type}, "{self.description}")'
+
+    @property
+    def ratio(self):
+        img = PILImage.open(BytesIO(self.data))
+        width, height = img.size
+        return {"width": width, "height": height}
