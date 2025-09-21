@@ -501,6 +501,7 @@ class Bluesky(Service):
                     [i.description for i in images],
                     self.bluesky.me.did,
                     in_reply_to_id,
+                    image_aspect_ratios=[i.ratio for i in images]
                 )
             else:
                 resp = self.bluesky.send_post(

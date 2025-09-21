@@ -1,7 +1,7 @@
 import logging
 from io import BytesIO
 from pathlib import Path
-from typing import BinaryIO, Optional
+from typing import BinaryIO, Optional, Union
 
 from PIL import Image as PILImage
 
@@ -13,7 +13,7 @@ class Image:
 
     def __init__(
         self,
-        path: Optional[str | Path] = None,
+        path: Optional[Union[str, Path]] = None,
         file: Optional[BinaryIO] = None,
         data: Optional[bytes] = None,
         mime_type: Optional[str] = None,
@@ -98,3 +98,9 @@ class Image:
 
     def __repr__(self):
         return f'Image({self.mime_type}, "{self.description}")'
+
+    @property
+    def ratio(self):
+        img = PILImage.open(BytesIO(self.data))
+        width, height = img.size
+        return {"width": width, "height": height}
