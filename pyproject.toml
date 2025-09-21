@@ -1,6 +1,6 @@
 [project]
 name = "polybot"
-version = "0.9.5"
+version = "0.9.6"
 description = "A simple framework for building robust social media bots for multiple networks"
 authors = [{ name = "Russ Garrett", email = "russ@garrett.co.uk" }]
 readme = "README.md"
@@ -36,5 +36,4 @@ select = ["E", "F", "UP", "I"]
 
 [tool.ruff.format]
 quote-style = "single"
-indent-style = "tab"
 docstring-code-format = true
