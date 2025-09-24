@@ -44,7 +44,7 @@ You'll be guided through authenticating and a config file will be automatically 
 Use the `--profile [name]` to save and use a specific state/config.
 
 By default, the bot will run in development mode, where it doesn't actually post to services. To run
-in live mode, pass the `--live` flag.
+in live mode, pass the `--live` flag, or to run in interactive mode pass the `--interactive` flag.
 
 ### Images
 
