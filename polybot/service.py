@@ -34,10 +34,11 @@ class Service:
     max_image_pixels: Optional[int] = None
     max_image_count: int = 4
 
-    def __init__(self, config, live: bool) -> None:
+    def __init__(self, config, live: bool, interactive: bool) -> None:
         self.log = logging.getLogger(__name__)
         self.config = config
         self.live = live
+        self.interactive = interactive
         self.user_agent = (
             f"Polybot/{POLYBOT_VERSION} (https://github.com/russss/polybot)"
         )
@@ -69,7 +70,11 @@ class Service:
             i.resize_to_target(self.max_image_size, self.max_image_pixels)
             for i in images[: self.max_image_count]
         ]
-        if self.live:
+        post = self.live
+        if self.interactive:
+            result = input(f"Post status “{status}”? (y/N)")
+            post = (result[0].lower() == "y")
+        if post:
             if wrap:
                 return self.do_wrapped(status, images, lat, lon, in_reply_to_id)
             if isinstance(status, list):
@@ -227,8 +232,8 @@ class Mastodon(Service):
     max_length_image = 500
     max_image_size = int(16e6)
 
-    def __init__(self, config, live: bool):
-        super().__init__(config, live)
+    def __init__(self, config, live: bool, interactive: bool):
+        super().__init__(config, live, interactive)
         self.http = httpx.Client(headers={"User-Agent": self.user_agent})
 
     def auth(self):
@@ -431,8 +436,8 @@ class Bluesky(Service):
     # As of 2024-12-03 the maximum image size allowed on Bluesky is 1 metric megabyte.
     max_image_size = int(1e6)
 
-    def __init__(self, config, live: bool):
-        super().__init__(config, live)
+    def __init__(self, config, live: bool, interactive: bool):
+        super().__init__(config, live, interactive)
         self.login_ratelimit_expiry = 0
         self.connected = False
 

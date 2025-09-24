@@ -25,6 +25,11 @@ class Bot:
             help="Actually post updates. Without this flag, runs in dev mode.",
         )
         self.parser.add_argument(
+            "--interactive",
+            action="store_true",
+            help="Ask whether to actually post each update.",
+        )
+        self.parser.add_argument(
             "--setup", action="store_true", help="Configure accounts"
         )
         self.parser.add_argument("--profile", default="", help="Choose profile")
@@ -65,20 +70,21 @@ class Bot:
                 pass
             return
 
-        if not self.args.live:
+        if not self.args.live and not self.args.interactive:
             self.log.warning(
-                "Running in test mode - not posting updates. Pass --live to run in live mode."
+                "Running in test mode - not posting updates. Pass --live to run in live mode,"
+                " or --interactive to run in interactive mode."
             )
 
         for Svc in ALL_SERVICES:
             if Svc.name in self.config:
-                svc = Svc(self.config, self.args.live)
+                svc = Svc(self.config, self.args.live, self.args.interactive)
                 svc.auth()
                 self.services.append(svc)
 
         if len(self.services) == 0:
             self.log.warning("No services to post to. Use --setup to configure some!")
-            if self.args.live:
+            if self.args.live or self.args.interactive:
                 return
 
         signal.signal(signal.SIGTERM, self.signal)
@@ -105,7 +111,7 @@ class Bot:
             if Svc.name not in self.config:
                 result = input(f"Configure {Svc.name} (y/n)? ")
                 if result[0] == "y":
-                    if Svc(self.config, False).setup():
+                    if Svc(self.config, False, False).setup():
                         print(f"Configuring {Svc.name} succeeded, writing config")
                         self.write_config()
                     else:

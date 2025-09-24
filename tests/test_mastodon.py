@@ -9,7 +9,7 @@ def test_instance_info():
     config.add_section("mastodon")
     config.set("mastodon", "base_url", "https://bot.country")
 
-    service = Mastodon(config, "mastodon")
+    service = Mastodon(config, "mastodon", False)
     service.update_instance_info()
     assert service.software == "gotosocial"
     assert service.max_length == 5000
@@ -17,7 +17,7 @@ def test_instance_info():
     assert service.max_image_count == 6
 
     config.set("mastodon", "base_url", "https://mastodon.social")
-    service = Mastodon(config, "mastodon")
+    service = Mastodon(config, "mastodon", False)
     service.update_instance_info()
     assert service.software == "mastodon"
     assert service.max_length == 500
