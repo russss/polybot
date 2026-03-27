@@ -1,3 +1,9 @@
+
+> [!IMPORTANT]
+> This repository has been migrated to Codeberg at [https://codeberg.org/russss/polybot](https://codeberg.org/russss/polybot)
+
+
+
 [![PyPI version](https://badge.fury.io/py/polybot.svg)](https://badge.fury.io/py/polybot)
 
 # Polybot
